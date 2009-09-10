@@ -86,31 +86,80 @@
     (map accept-fragment
          (str-utils/re-split #"\s*,\s*" h))))
 
-;; TODO
-(defn acceptable-type [type-pair acceptable]
-  true)
-
+(defn acceptable-type
+  "Compare two type pairs. If the pairing is acceptable,
+   return the most specific.
+  E.g., for
+  
+    [\"text\" \"plain\"] [\"*\" \"*\"]
+  
+  returns
+  
+    [\"text\" \"plain\"]."
+  [type-pair acceptable-pair]
+  
+  (cond
+    (or (= type-pair acceptable-pair)
+        (= ["*" "*"] acceptable-pair))
+    type-pair
+    
+    (= ["*" "*"] type-pair)
+    acceptable-pair
+    
+    true
+    ;; Otherwise, maybe one has a star.
+    (let [[tmaj tmin] type-pair
+          [amaj amin] acceptable-pair]
+      (when (= tmaj amaj)
+        (cond
+          (= "*" tmin)
+          acceptable-pair
+          
+          (= "*" amin)
+          type-pair)))))
+              
 (defn allowed-types-filter [allowed-types]
   (fn [accept]
     (some (partial acceptable-type accept)
           allowed-types)))
 
+(defn- enpair
+  "Ensure that a collection of types is a collection of pairs."
+  [x]
+  (filter identity
+          (map (fn [y] (if (string? y)
+                         (:type (accept-fragment y))
+                         y))
+               x)))
+
+(defn- first-fn
+  "Return (f x) for the first item in coll for which (f x) is true.
+  This has gotta be in contrib somewhere."
+  [f coll]
+  (first (filter identity (map f coll))))
+  
 (defn best-allowed-content-type
-  "Return the first type in the Accept header that is acceptable."
+  "Return the first type in the Accept header that is acceptable.
+  allowed-types is a set containing pairs (e.g., [\"text\" \"*\"])
+  or strings (e.g., \"text/plain\").
+  
+  Definition of \"acceptable\":
+  An Accept header fragment of \"text/*\" is acceptable when allowing
+  \"text/plain\".
+  An Accept header fragment of \"text/plain\" is acceptable when allowing
+  \"text/*\"."
+
   ([accepts-header]
    (best-allowed-content-type accepts-header true))
   ([accepts-header
     allowed-types]    ; Set of strings or pairs. true/nil/:all for any.
-   (:type
-     (first
-       (let [sorted (sorted-accept accepts-header)]
-         (cond
-           (contains? #{:all nil true} allowed-types)
-           sorted
-
-           (fn? allowed-types)
-           (filter allowed-types sorted)
-
-           true
-           (filter (allowed-types-filter allowed-types)
-                   sorted)))))))
+    (let [sorted (map :type (sorted-accept accepts-header))]
+      (cond
+        (contains? #{:all nil true} allowed-types)
+        (first sorted)
+ 
+        (fn? allowed-types)
+        (first-fn (enpair allowed-types) sorted)
+ 
+        true
+        (first-fn (allowed-types-filter (enpair allowed-types)) sorted)))))
