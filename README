@@ -1,0 +1,34 @@
+A basic content negotiation library for Clojure.
+
+The primary interface function is
+
+    com.twinql.clojure.conneg/best-allowed-content-type
+
+though you might also be interested in `sorted-accept` (at a lower level).
+
+Usage:
+
+    (require ['com.twinql.clojure.conneg :as 'conneg])
+
+    (conneg/best-allowed-content-type
+      "image/*; q=0.5, text/html, text/plain; q=0.8")
+    =>
+    ("text" "html")
+    
+    (conneg/best-allowed-content-type
+      "image/*; q=0.9, text/html; q=0.1, text/plain; q=0.8")
+    =>
+    ("image" "*")
+
+    ;; Get your accept header from your web framework,
+    ;; and filter by which types you can produce:
+    (let [accept-header (:accept headers)]
+      (conneg/best-allowed-content-type
+        accept-header
+        #{"text/plain" "text/html"}))
+
+    =>
+    ["text" "plain"]
+
+Note that the allowed-types filtering isn't implemented yet. Give me a little
+while :)

@@ -1,0 +1,56 @@
+<project name="clj-conneg" default="jar">
+
+  <property name="clojure.jar" location="/opt/clojure/clojure.jar"/>
+  <property name="clojure.contrib.jar" location="/opt/clojure-contrib/clojure-contrib.jar"/>
+  
+  <available property="hasclojure" file="${clojure.jar}"/>
+  
+  <property name="src" location="src"/>
+  <property name="base.build" location="classes"/>
+  
+  <!-- One jar. Invoke in different ways to reflect different roles. -->
+  <property name="base.jarfile" location="clj-conneg.jar"/>
+  
+  <!-- Include dependencies. -->
+  <property name="solitary.jarfile" location="clj-conneg-full.jar"/>
+  
+  <path id="baselibs.path">
+    <!-- Clojure. -->
+    <path location="${clojure.jar}"/>
+    <path location="${clojure.contrib.jar}"/>
+  </path>
+
+  <path id="compile.path">
+    <path location="${base.build}"/>
+    <path location="${src}"/>
+
+    <path refid="baselibs.path"/>
+  </path>
+  
+  <target name="init">
+    <tstamp/>
+    <mkdir dir="${base.build}"/>
+  </target>
+
+  <target name="clean" description="Remove generated files and directories.">
+    <delete dir="${base.build}"/>
+    <delete file="${base.jarfile}"/>
+  </target>
+
+  <target name="compile_clojure" depends="init"
+          description="Compile Clojure sources."
+          if="hasclojure">
+    <java classname="clojure.lang.Compile">
+      <classpath refid="compile.path"/>
+     
+      <sysproperty key="clojure.compile.path" value="${base.build}"/>
+      <arg value="com.twinql.clojure.conneg"/>
+    </java>
+  </target>
+  
+  <target name="jar" description="Create plain jar file." depends="compile_clojure">
+    <jar index="false" jarfile="${base.jarfile}">
+      <fileset dir="${base.build}" includes="**/*.class"/>
+    </jar>
+  </target>
+</project>
