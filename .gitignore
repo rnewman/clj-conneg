@@ -1,3 +1,6 @@
 .*.sw*
 *~
 *.class
+/.lein-failures
+/.lein-repl-history
+/pom.xml
