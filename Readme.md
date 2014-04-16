@@ -1,4 +1,10 @@
+# clj-conneg
+
+[![Build Status](https://travis-ci.org/mtnygard/clj-conneg.png)](https://travis-ci.org/mtnygard/clj-conneg)
+
 A basic content negotiation library for Clojure.
+
+# Usage
 
 The primary interface function is
 
